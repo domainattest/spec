@@ -1,0 +1,11 @@
+{
+  "issuer": "https://attest.example-registrar.com",
+  "attest_iana_id": 1234,
+  "authorization_endpoint": "https://attest.example-registrar.com/authorize",
+  "token_endpoint": "https://attest.example-registrar.com/token",
+  "jwks_uri": "https://attest.example-registrar.com/.well-known/jwks.json",
+  "attest_versions_supported": ["1"],
+  "modes_supported": ["direct", "hub"],
+  "code_challenge_methods_supported": ["S256"],
+  "attestation_signing_alg_values_supported": ["ES256"]
+}

@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DomainAttest attestation inspector</title>
+<meta name="description" content="Paste a DomainAttest attestation and verify it in your browser: signature against the registrar's published JWKS plus every check in spec section 3.5.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<style>
+  :root{
+    --ink:#111318; --body:#3c4257; --muted:#6a7183; --line:#e4e6eb; --soft:#f7f8fa;
+    --accent:#1f43c7; --accent-dark:#173397; --ok:#0d7a4f; --bad:#b3261e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#fff;color:var(--body);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .mark{font-weight:700;font-size:16px;color:var(--ink);letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+  .mark img{height:30px;width:auto;display:block}
+  .mark b{color:var(--accent);font-weight:700}
+  nav a{color:var(--muted);font-size:14px;font-weight:500;margin-left:22px}
+  nav a:hover{color:var(--ink);text-decoration:none}
+  h1{font-size:clamp(26px,4vw,34px);letter-spacing:-.8px;font-weight:700;color:var(--ink);margin:56px 0 12px}
+  .lead{max-width:680px;margin-bottom:32px}
+  label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:18px 0 6px}
+  textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font:13px/1.6 'IBM Plex Mono',monospace;color:var(--body);background:var(--soft)}
+  textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:0;background:#fff}
+  textarea{min-height:120px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){.row{grid-template-columns:1fr}}
+  .btns{margin:24px 0 8px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  button{border:0;border-radius:6px;font-weight:600;font-size:15px;padding:11px 22px;cursor:pointer}
+  .primary{background:var(--accent);color:#fff}
+  .primary:hover{background:var(--accent-dark)}
+  .ghost{background:var(--soft);border:1px solid var(--line);color:var(--ink)}
+  .ghost:hover{border-color:var(--accent)}
+  .checks{margin:32px 0;border:1px solid var(--line);border-radius:8px;overflow:hidden;display:none}
+  .checks.show{display:block}
+  .check{display:flex;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:14.5px;align-items:baseline}
+  .check:last-child{border-bottom:0}
+  .check .mark2{font-weight:700;width:18px;flex:0 0 18px}
+  .check.pass .mark2{color:var(--ok)}
+  .check.fail .mark2{color:var(--bad)}
+  .check.skip .mark2{color:var(--muted)}
+  .check b{color:var(--ink);font-weight:600}
+  .check .detail{color:var(--muted);font-size:13.5px}
+  .verdict{display:none;margin:20px 0;padding:14px 18px;border-radius:8px;font-weight:600;font-size:15px}
+  .verdict.show{display:block}
+  .verdict.pass{background:#f2faf6;border:1px solid #cde7db;color:var(--ok)}
+  .verdict.fail{background:#fdf2f1;border:1px solid #f0d4d2;color:var(--bad)}
+  .decoded{display:none;margin:8px 0 48px}
+  .decoded.show{display:block}
+  .decoded h2{font-size:16px;color:var(--ink);font-weight:700;margin:24px 0 8px}
+  pre.json{border:1px solid var(--line);border-radius:8px;background:var(--soft);padding:16px 18px;font:12.5px/1.7 'IBM Plex Mono',monospace;color:var(--body);overflow-x:auto;white-space:pre}
+  details{margin:16px 0}
+  summary{cursor:pointer;font-size:13.5px;color:var(--muted);font-weight:500}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  footer{border-top:1px solid var(--line);padding:36px 0 48px;color:var(--muted);font-size:13.5px;margin-top:48px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="mark"><a href="/" style="display:block"><img src="logo-full.png" alt="DomainAttest"></a></div>
+    <nav>
+      <a href="/">Protocol</a>
+      <a href="https://github.com/domainattest/spec/blob/main/SPEC.md">Spec</a>
+      <a href="https://github.com/domainattest/spec">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Attestation inspector</h1>
+  <p class="lead">Paste a DomainAttest attestation and verify it entirely in your browser: the ES256 signature is checked against the issuer&rsquo;s published JWKS, then every validation step from <a href="https://github.com/domainattest/spec/blob/main/SPEC.md#35-validation">section 3.5 of the specification</a> runs locally. Nothing you paste leaves this page. No token handy? Generate a sample signed by this site&rsquo;s demo issuer.</p>
+
+  <label for="jws">Attestation (compact JWS)</label>
+  <textarea id="jws" spellcheck="false" placeholder="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6..."></textarea>
+
+  <div class="row">
+    <div>
+      <label for="expDomain">Expected domain (sub)</label>
+      <input type="text" id="expDomain" spellcheck="false" placeholder="exampledomain.com">
+    </div>
+    <div>
+      <label for="expAud">Your client_id (aud)</label>
+      <input type="text" id="expAud" spellcheck="false" placeholder="marketplace-client-8842">
+    </div>
+  </div>
+
+  <details>
+    <summary>Registrar JWKS (optional: paste manually if the issuer blocks cross-origin discovery)</summary>
+    <textarea id="manualJwks" spellcheck="false" placeholder='{"keys":[{"kty":"EC","crv":"P-256",...}]}' style="margin-top:8px"></textarea>
+  </details>
+
+  <div class="btns">
+    <button class="primary" id="verifyBtn">Verify</button>
+    <button class="ghost" id="sampleBtn">Generate sample attestation</button>
+    <a href="#" id="resetJti" style="font-size:13px">reset replay memory</a>
+  </div>
+  <p class="note">The replay check remembers token IDs in this browser&rsquo;s local storage, the same way a relying party tracks <code>jti</code> values. Verify the same token twice to see it fire.</p>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="checks" id="checks"></div>
+
+  <div class="decoded" id="decoded">
+    <h2>Header</h2><pre class="json" id="hdrOut"></pre>
+    <h2>Claims</h2><pre class="json" id="clmOut"></pre>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">DomainAttest inspector runs entirely client-side. Demo issuer: <code>https://domainattest.org/demo</code> (a fixture for this page, not a registrar).</div>
+</footer>
+
+<script>
+(function(){
+  var DEMO_ISS = 'https://domainattest.org/demo';
+  var DEMO_PRIV = {"kty":"EC","crv":"P-256","kid":"demo-2026-07","x":"BlWjN4B26t_jMn1cMFnf48PBix1aZHXELVyyjcRqDNM","y":"SM5nhoHeupxgLi1bRUkzFYvQDS3qV2VzlucQStesgGA","d":"VUb9SEVt7ynmDMxeDmxFqlj1enPxCzcoy-uslUvXoOc"};
+
+  function b64uToBytes(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var bin=atob(s);var a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
+  function bytesToB64u(a){var s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+  function utf8(s){return new TextEncoder().encode(s);}
+  function jsonB64u(o){return bytesToB64u(utf8(JSON.stringify(o)));}
+
+  var $ = function(id){return document.getElementById(id);};
+  var checksEl=$('checks'), verdictEl=$('verdict'), decodedEl=$('decoded');
+
+  function seenKey(iss,jti){return iss+'|'+jti;}
+  function loadSeen(){try{return JSON.parse(localStorage.getItem('da_seen')||'{}');}catch(e){return {};}}
+  function saveSeen(m){localStorage.setItem('da_seen',JSON.stringify(m));}
+  $('resetJti').addEventListener('click',function(e){e.preventDefault();localStorage.removeItem('da_seen');alert('Replay memory cleared.');});
+
+  function addCheck(state,title,detail){
+    var d=document.createElement('div');d.className='check '+state;
+    d.innerHTML='<span class="mark2">'+(state==='pass'?'✓':state==='fail'?'✕':'–')+'</span><span><b>'+title+'</b><br><span class="detail">'+detail+'</span></span>';
+    checksEl.appendChild(d);
+  }
+
+  async function discoverJwks(iss){
+    var manual=$('manualJwks').value.trim();
+    if(manual){return {jwks:JSON.parse(manual),source:'pasted manually'};}
+    if(iss===DEMO_ISS){
+      var r=await fetch('demo/jwks.json');
+      return {jwks:await r.json(),source:'demo/jwks.json (demo issuer fixture)'};
+    }
+    var cfgUrl=iss.replace(/\/$/,'')+'/.well-known/domainattest-configuration';
+    var cfg=await (await fetch(cfgUrl)).json();
+    var jwks=await (await fetch(cfg.jwks_uri)).json();
+    return {jwks:jwks,source:cfg.jwks_uri+' via '+cfgUrl};
+  }
+
+  async function verify(){
+    checksEl.innerHTML='';checksEl.classList.add('show');
+    verdictEl.className='verdict';decodedEl.className='decoded';
+    var raw=$('jws').value.trim();
+    var parts=raw.split('.');
+    if(parts.length!==3){addCheck('fail','Compact JWS structure','Expected three dot-separated segments, got '+parts.length+'.');showVerdict(false);return;}
+    var hdr,clm;
+    try{hdr=JSON.parse(new TextDecoder().decode(b64uToBytes(parts[0])));clm=JSON.parse(new TextDecoder().decode(b64uToBytes(parts[1])));}
+    catch(e){addCheck('fail','Compact JWS structure','Header or payload is not valid base64url JSON.');showVerdict(false);return;}
+    $('hdrOut').textContent=JSON.stringify(hdr,null,2);
+    $('clmOut').textContent=JSON.stringify(clm,null,2);
+    decodedEl.classList.add('show');
+
+    var ok=true;
+
+    // 1. signature against published JWKS, selected by kid
+    var sigPass=false, jwksSource='';
+    try{
+      var disc=await discoverJwks(String(clm.iss||''));
+      jwksSource=disc.source;
+      var key=(disc.jwks.keys||[]).filter(function(k){return k.kid===hdr.kid;})[0];
+      if(!key){addCheck('fail','1. Signature','No key with kid "'+hdr.kid+'" in the issuer JWKS ('+jwksSource+').');ok=false;}
+      else{
+        var pub=await crypto.subtle.importKey('jwk',{kty:key.kty,crv:key.crv,x:key.x,y:key.y,ext:true},{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+        sigPass=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pub,b64uToBytes(parts[2]),utf8(parts[0]+'.'+parts[1]));
+        if(sigPass){addCheck('pass','1. Signature','ES256 signature verifies against key "'+hdr.kid+'" from '+jwksSource+'.');}
+        else{addCheck('fail','1. Signature','Signature does not verify against key "'+hdr.kid+'". The token was altered or signed by a different key.');ok=false;}
+      }
+    }catch(e){addCheck('fail','1. Signature','Could not fetch or use the issuer JWKS ('+(e.message||e)+'). If the registrar blocks cross-origin requests, paste its JWKS manually above.');ok=false;}
+
+    // 2. iss
+    if(clm.iss){addCheck('pass','2. Issuer','iss = '+clm.iss+(clm.iss===DEMO_ISS?' (demo issuer for this page)':''));}
+    else{addCheck('fail','2. Issuer','iss claim missing.');ok=false;}
+
+    // 3. sub equals requested domain
+    var expD=$('expDomain').value.trim().toLowerCase();
+    if(!expD){addCheck('skip','3. Domain (sub)','sub = '+clm.sub+'. Enter an expected domain above to enforce this check.');}
+    else if(clm.sub===expD){addCheck('pass','3. Domain (sub)','sub matches the requested domain: '+clm.sub);}
+    else{addCheck('fail','3. Domain (sub)','sub is "'+clm.sub+'" but you requested "'+expD+'". An attestation for one domain proves nothing about another.');ok=false;}
+
+    // 4. aud equals RP client_id
+    var expA=$('expAud').value.trim();
+    if(!expA){addCheck('skip','4. Audience (aud)','aud = '+clm.aud+'. Enter your client_id above to enforce this check.');}
+    else if(clm.aud===expA){addCheck('pass','4. Audience (aud)','aud matches your client_id. This attestation was issued for you.');}
+    else{addCheck('fail','4. Audience (aud)','aud is "'+clm.aud+'", not "'+expA+'". Attestations are single-audience by design; one captured from another relying party is useless here.');ok=false;}
+
+    // 5. time window
+    var now=Math.floor(Date.now()/1000), leeway=10;
+    if(typeof clm.iat!=='number'||typeof clm.exp!=='number'){addCheck('fail','5. Validity window','iat or exp missing.');ok=false;}
+    else if(now+leeway<clm.iat){addCheck('fail','5. Validity window','iat is in the future ('+new Date(clm.iat*1000).toISOString()+').');ok=false;}
+    else if(now-leeway>clm.exp){addCheck('fail','5. Validity window','Expired '+Math.round((now-clm.exp)/60)+' minute(s) ago. Attestations live for at most 15 minutes by design; request a fresh one.');ok=false;}
+    else if(clm.exp-clm.iat>900){addCheck('fail','5. Validity window','Lifetime is '+(clm.exp-clm.iat)+'s; the spec caps exp at iat + 900s.');ok=false;}
+    else{addCheck('pass','5. Validity window','Valid for another '+Math.round((clm.exp-now)/60)+' minute(s). Lifetime '+(clm.exp-clm.iat)+'s (max 900s).');}
+
+    // 6. jti replay
+    if(!clm.jti){addCheck('fail','6. Replay (jti)','jti claim missing.');ok=false;}
+    else{
+      var seen=loadSeen(), k=seenKey(String(clm.iss),String(clm.jti));
+      if(seen[k]){addCheck('fail','6. Replay (jti)','This jti was already accepted by this browser at '+new Date(seen[k]).toISOString()+'. A relying party MUST reject the duplicate.');ok=false;}
+      else{
+        if(ok&&sigPass){seen[k]=Date.now();saveSeen(seen);}
+        addCheck('pass','6. Replay (jti)','jti "'+clm.jti+'" not seen before.'+(ok&&sigPass?' Recorded; verifying this token again will demonstrate the replay rejection.':''));
+      }
+    }
+
+    showVerdict(ok);
+  }
+
+  function showVerdict(ok){
+    verdictEl.textContent=ok?'✓ Attestation accepted: this account controls this domain, for this relying party, right now.':'✕ Attestation rejected. Failure of any check means the relying party must reject it (spec 3.5).';
+    verdictEl.className='verdict show '+(ok?'pass':'fail');
+  }
+
+  async function generateSample(){
+    var now=Math.floor(Date.now()/1000);
+    var jti='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=crypto.getRandomValues(new Uint8Array(1))[0]%16;var v=c==='x'?r:(r%4)+8;return v.toString(16);});
+    var hdr={alg:'ES256',typ:'JWT',kid:DEMO_PRIV.kid};
+    var clm={iss:DEMO_ISS,sub:'exampledomain.com',aud:'demo-marketplace',iat:now,exp:now+600,jti:jti,attest_ver:'1',acct_hash:'u5Zt3demoDemo9qLm',locked:true};
+    var signing=jsonB64u(hdr)+'.'+jsonB64u(clm);
+    var priv=await crypto.subtle.importKey('jwk',DEMO_PRIV,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+    var sig=new Uint8Array(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},priv,utf8(signing)));
+    $('jws').value=signing+'.'+bytesToB64u(sig);
+    $('expDomain').value='exampledomain.com';
+    $('expAud').value='demo-marketplace';
+    verdictEl.className='verdict';checksEl.className='checks';decodedEl.className='decoded';
+  }
+
+  $('verifyBtn').addEventListener('click',function(){verify();});
+  $('sampleBtn').addEventListener('click',function(){generateSample();});
+})();
+</script>
+
+</body>
+</html>

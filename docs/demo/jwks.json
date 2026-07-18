@@ -1,0 +1,13 @@
+{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "use": "sig",
+      "alg": "ES256",
+      "kid": "demo-2026-07",
+      "x": "BlWjN4B26t_jMn1cMFnf48PBix1aZHXELVyyjcRqDNM",
+      "y": "SM5nhoHeupxgLi1bRUkzFYvQDS3qV2VzlucQStesgGA"
+    }
+  ]
+}

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DomainAttest: instant, registrar-signed proof of domain ownership</title>
+<meta name="description" content="DomainAttest is an open protocol that lets a domain registrar issue a signed, short-lived attestation that an account controls a domain. No TXT records, no propagation, no stale verifications.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://domainattest.org/">
+<meta property="og:title" content="DomainAttest: instant, registrar-signed proof of domain ownership">
+<meta property="og:description" content="An open protocol: the registrar issues a signed, short-lived ownership attestation and any service verifies it in seconds. No TXT records, no propagation, no stale verifications.">
+<meta property="og:image" content="https://domainattest.org/og-card.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DomainAttest: instant, registrar-signed proof of domain ownership">
+<meta name="twitter:description" content="An open protocol: the registrar issues a signed, short-lived ownership attestation and any service verifies it in seconds. No TXT records, no propagation, no stale verifications.">
+<meta name="twitter:image" content="https://domainattest.org/og-card.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+
+<style>
+  :root{
+    --ink:#111318; --body:#3c4257; --muted:#6a7183; --line:#e4e6eb; --soft:#f7f8fa;
+    --accent:#1f43c7; --accent-dark:#173397; --ok:#0d7a4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#fff;color:var(--body);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .mark{font-weight:700;font-size:16px;color:var(--ink);letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+  .mark img{height:30px;width:auto;display:block}
+  .mark b{color:var(--accent);font-weight:700}
+  nav{display:flex;align-items:center;gap:24px}
+  nav a{color:var(--muted);font-size:14px;font-weight:500}
+  nav a:hover{color:var(--ink);text-decoration:none}
+  @media (max-width:680px){nav a:not(.gh){display:none}}
+
+  .hero{padding:84px 0 72px;border-bottom:1px solid var(--line)}
+  .status{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ok);border:1px solid #cde7db;background:#f2faf6;border-radius:4px;padding:3px 10px;margin-bottom:26px}
+  .hero h1{font-size:clamp(30px,4.6vw,44px);line-height:1.14;letter-spacing:-1.1px;font-weight:700;color:var(--ink);max-width:700px;margin-bottom:20px}
+  .hero p{font-size:18px;max-width:660px;margin-bottom:32px}
+  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:600;font-size:15px;padding:11px 22px;border-radius:6px}
+  .cta:hover{background:var(--accent-dark);text-decoration:none}
+  .cta2{display:inline-block;margin-left:18px;font-weight:600;font-size:15px}
+
+  .diagram{margin-top:56px;border:1px solid var(--line);border-radius:8px;background:var(--soft);overflow-x:auto}
+  .diagram pre{padding:24px 28px;font:13px/1.7 'IBM Plex Mono',monospace;color:var(--body);white-space:pre}
+  .diagram pre b{color:var(--ink);font-weight:600}
+  .diagram-note{border-top:1px solid var(--line);padding:10px 28px;font:12.5px 'IBM Plex Mono',monospace;color:var(--muted)}
+
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:24px;letter-spacing:-.5px;font-weight:700;color:var(--ink);margin-bottom:14px}
+  .lead{max-width:660px}
+
+  ol.steps{margin:32px 0 0 0;padding-left:0;list-style:none;max-width:700px;counter-reset:s}
+  ol.steps li{counter-increment:s;position:relative;padding:0 0 20px 44px}
+  ol.steps li::before{content:counter(s) ".";position:absolute;left:0;top:0;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  ol.steps b{color:var(--ink);font-weight:600}
+
+  dl.principles{margin-top:36px;max-width:700px}
+  dl.principles dt{font-weight:700;color:var(--ink);margin-top:22px}
+  dl.principles dt:first-child{margin-top:0}
+  dl.principles dd{margin:4px 0 0 0}
+
+  .tablewrap{margin-top:36px;border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+  table.cmp{width:100%;border-collapse:collapse;font-size:14.5px;min-width:600px}
+  .cmp th{text-align:left;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:14px 18px;border-bottom:2px solid var(--line);background:var(--soft)}
+  .cmp th.hl{color:var(--accent)}
+  .cmp td{padding:12px 18px;border-bottom:1px solid var(--line);vertical-align:top}
+  .cmp tr:last-child td{border-bottom:0}
+  .cmp td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+  .cmp td.hl{color:var(--ink);font-weight:500}
+
+  .threecol{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px;margin-top:36px}
+  .threecol h3{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px}
+  .threecol p{font-size:14.5px}
+  .threecol a{display:inline-block;margin-top:10px;font-size:14.5px;font-weight:600}
+
+  .bene{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:36px;margin-top:36px}
+  .buyerline{margin-top:32px;padding-top:24px;border-top:1px solid var(--line);max-width:700px;font-size:14.5px;color:var(--muted)}
+  .buyerline b{color:var(--ink)}
+  .bene h3{font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.3px;margin-bottom:8px}
+  .bene .sub{font-size:14.5px;color:var(--muted);margin-bottom:6px}
+  .bene dt{font-weight:600;color:var(--ink);margin-top:16px;font-size:15px}
+  .bene dd{margin:2px 0 0 0;font-size:14.5px}
+
+  .faq{max-width:700px;margin-top:8px}
+  .faq h3{font-size:16.5px;font-weight:700;color:var(--ink);margin:28px 0 6px}
+
+  .closer{padding:72px 0}
+  .closer p.big{font-size:20px;color:var(--ink);font-weight:600;max-width:680px;margin-bottom:14px;letter-spacing:-.3px}
+  .closer p{max-width:680px}
+
+  footer{padding:36px 0 48px;color:var(--muted);font-size:13.5px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="mark"><a href="/"><img src="logo-full.png" alt="DomainAttest"></a></div>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#benefits">Benefits</a>
+      <a href="#compare">Comparison</a>
+      <a href="#implement">Implement</a>
+      <a href="#faq">FAQ</a>
+      <a href="inspector.html">Inspector</a>
+      <a class="gh" href="https://github.com/domainattest/spec">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="status">v1.0 &middot; stable specification</span>
+    <h1>Instant, registrar-signed proof of domain ownership.</h1>
+    <p>DomainAttest is an open protocol that lets any registrar issue a signed, short-lived attestation that an account controls a domain, and lets any marketplace, or any other service, verify it in seconds. No TXT records, no propagation delays, no stale verifications.</p>
+    <a class="cta" href="https://github.com/domainattest/spec/blob/main/SPEC.md">Read the specification</a>
+    <a class="cta2" href="https://github.com/domainattest/spec/blob/main/docs/WHITEPAPER.md">Read the whitepaper &rarr;</a>
+    <a class="cta2" href="whitepaper.pdf" style="margin-left:12px;font-weight:500;color:var(--muted)">PDF</a>
+
+    <div class="diagram">
+<pre> <b>Seller</b>                <b>Marketplace</b>              <b>Registrar</b>
+   │                       │                        │
+   │  list domain          │                        │
+   ├──────────────────────>│                        │
+   │                       │  redirect (OAuth)      │
+   │<──────────────────────┤                        │
+   │                                                │
+   │  log in with existing account + 2FA, approve   │
+   ├───────────────────────────────────────────────>│
+   │                       │                        │
+   │                       │   signed ownership     │
+   │                       │      attestation       │
+   │                       │<───────────────────────┤
+   │                       │                        │
+   │                  verify signature,             │
+   │                  <b>listing goes live</b>             │</pre>
+      <div class="diagram-note">ES256-signed &middot; expires in minutes &middot; valid for one relying party only</div>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="lead">DomainAttest is a profile of the OAuth 2.0 authorization code flow with PKCE. It introduces no new cryptography, no new identity system, and no bearer secrets that can be phished.</p>
+    <ol class="steps">
+      <li>A seller chooses <b>&ldquo;Verify with your registrar&rdquo;</b> on a marketplace.</li>
+      <li>The marketplace redirects to the registrar with a request naming <b>the domain and the marketplace</b>.</li>
+      <li>The seller signs in to the registrar the way they always do, <b>including any 2FA on the account</b>.</li>
+      <li>The registrar confirms the account controls the domain and returns a <b>signed attestation</b>: this account controls this domain, now, for this marketplace.</li>
+      <li>The marketplace validates the signature against the registrar&rsquo;s <b>published keys</b> and publishes the listing. Under five seconds, end to end.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="benefits">
+  <div class="wrap">
+    <h2>Who benefits</h2>
+    <p class="lead">Verification friction costs every side of the market. Removing it pays every side, too.</p>
+    <div class="bene">
+      <div>
+        <h3>Registrars</h3>
+        <p class="sub">The protocol repositions the registrar as the authority every marketplace depends on to answer the ownership question.</p>
+        <dl>
+          <dt>Retention</dt>
+          <dd>Instant verification makes the registrar the best home for a selling portfolio: sellers bring domains for the one-click listing and keep them there, along with the renewals. Future versions leave room for a sale to settle between accounts at the same registrar.</dd>
+          <dt>Retention beyond sellers</dt>
+          <dd>Marketplaces are the first relying party, not the last. As SaaS platforms, email providers, and website builders adopt the protocol, verifying a domain becomes a one-click step for every customer, and entrepreneurs stick with the registrar that makes it that easy everywhere.</dd>
+          <dt>Fewer support tickets</dt>
+          <dd>Verification-related tickets, from propagation delays to stale-listing disputes, go away.</dd>
+          <dt>Low implementation cost</dt>
+          <dd>One authorization endpoint and one signing key, on top of the login and ownership records the registrar already has.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Marketplaces</h3>
+        <p class="sub">Supply is the scarce resource, and verification friction leaks it at the moment of highest seller intent.</p>
+        <dl>
+          <dt>Verified supply</dt>
+          <dd>Removing the DNS step recovers listings that currently die in the funnel, and every recovered listing arrives provably real.</dd>
+          <dt>Fraud and front-running elimination</dt>
+          <dd>A registrar signature is categorically stronger proof than DNS control: a hijacked zone can pass TXT verification, but it cannot produce a registrar signature.</dd>
+          <dt>Freshness</dt>
+          <dd>Re-attest at the moments that matter: price change, offer received, escrow open. Listings whose sellers no longer control the domain retire automatically.</dd>
+          <dt>Less infrastructure</dt>
+          <dd>No polling systems, no propagation edge cases, no verification support queue, no manual dispute process.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Sellers</h3>
+        <p class="sub">Verification finally costs what it should: one click inside the account you already control.</p>
+        <dl>
+          <dt>One click, no DNS</dt>
+          <dd>No TXT records, no propagation wait, no risk to live email or sites on the domain.</dd>
+          <dt>Landers stay up</dt>
+          <dd>Verification never touches DNS, so it works no matter where your name servers point. List on a new marketplace without re-delegating and without your landers going dark.</dd>
+          <dt>Acquired domains list immediately</dt>
+          <dd>A current attestation supersedes any previous owner&rsquo;s stale verification. No support tickets to displace someone else&rsquo;s claim.</dd>
+        </dl>
+      </div>
+    </div>
+    <p class="buyerline"><b>Buyers</b> get listings backed by registrar-level proof of who controls the domain now, not who controlled it when the listing was created.</p>
+  </div>
+</section>
+
+<section id="agents">
+  <div class="wrap">
+    <h2>Built for the agent economy</h2>
+    <p class="lead">A growing share of domain discovery and acquisition runs through AI agents, and an agent cannot open a DNS panel, paste a TXT record, and wait for propagation. DomainAttest is machine-native end to end: registrar discovery via a <code style="font-family:'IBM Plex Mono',monospace;font-size:.9em;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:1px 6px">/.well-known</code> endpoint, a standard OAuth flow, and a signed token any client can validate in milliseconds.</p>
+    <p class="lead" style="margin-top:14px">Programmatic, instantly verifiable proof of ownership is a prerequisite for agent-mediated domain commerce. DomainAttest defines that layer deliberately, before fragmented workarounds define it by default, while consent stays with the human owner, on the registrar&rsquo;s own login. Agent-initiated flows with delegated holder consent are on the <a href="https://github.com/domainattest/spec/blob/main/SPEC.md#11-candidate-v2-features">v2 candidate list</a>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Design principles</h2>
+    <dl class="principles">
+      <dt>Open</dt>
+      <dd>Public specification, CC BY 4.0, free to implement, no permission required. A verification standard only works if it is neutral.</dd>
+      <dt>Minimal</dt>
+      <dd>One flow, one artifact, one signature scheme. A registrar with a modern auth stack can implement it in weeks.</dd>
+      <dt>Built on existing standards</dt>
+      <dd>OAuth 2.0, PKCE, JWT signatures, standard key publication. Nothing new to trust.</dd>
+      <dt>Privacy-preserving</dt>
+      <dd>An attestation proves control, not identity. No registrant data is exposed and Whois privacy is unaffected.</dd>
+      <dt>Time-bound by design</dt>
+      <dd>Ownership is a fact about now. Attestations expire in minutes; re-verifying costs one click, so verification stays current instead of going stale.</dd>
+      <dt>Incrementally adoptable</dt>
+      <dd>One registrar and one marketplace deliver instant verification on day one; each additional participant expands coverage from there.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="compare">
+  <div class="wrap">
+    <h2>DNS verification vs DomainAttest</h2>
+    <div class="tablewrap">
+      <table class="cmp">
+        <tr><th></th><th>DNS verification</th><th class="hl">DomainAttest</th></tr>
+        <tr><td>Time</td><td>Minutes to days</td><td class="hl">Seconds</td></tr>
+        <tr><td>Seller effort</td><td>Manual record edits</td><td class="hl">One click</td></tr>
+        <tr><td>Proves</td><td>DNS control, once</td><td class="hl">Registrar-of-record ownership, now</td></tr>
+        <tr><td>Freshness</td><td>Stale forever</td><td class="hl">Renewable on demand</td></tr>
+        <tr><td>Failure mode</td><td>Mistyped records, propagation</td><td class="hl">Standard OAuth errors</td></tr>
+        <tr><td>Fraud surface</td><td>Passes with hijacked DNS</td><td class="hl">Requires registrar signature</td></tr>
+        <tr><td>Lander name servers</td><td>Re-delegate twice; lander goes dark</td><td class="hl">Never touches DNS; landers stay up</td></tr>
+        <tr><td>Infrastructure</td><td>Custom polling per marketplace</td><td class="hl">Signature validation</td></tr>
+        <tr><td>Standard</td><td>Every marketplace rebuilds it</td><td class="hl">One open protocol</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <h2>Security model</h2>
+    <p class="lead">There is no bearer secret anywhere in the protocol. The domain industry already fights an epidemic of transfer auth-code phishing, and DomainAttest deliberately adds nothing a holder could be socially engineered out of: consent happens on the registrar&rsquo;s own login, under the account&rsquo;s existing protections, and the resulting attestation works only for the one relying party it names.</p>
+    <p class="lead" style="margin-top:14px">Attestations expire within 15 minutes, relying parties reject replayed token identifiers, and a compromised signing key affects only that registrar&rsquo;s domains, bounded by key rotation and token lifetime. The full analysis is in <a href="https://github.com/domainattest/spec/blob/main/SPEC.md#7-security-considerations">Section 7 of the specification</a>.</p>
+  </div>
+</section>
+
+<section id="implement">
+  <div class="wrap">
+    <h2>Implement it</h2>
+    <div class="threecol">
+      <div>
+        <h3>Registrars</h3>
+        <p>Expose one authorization endpoint and one token endpoint over your existing login, and publish a JWKS. Typical effort with a modern auth stack: two to four engineering weeks.</p>
+        <a href="https://github.com/domainattest/spec/blob/main/SPEC.md#9-registrar-implementation-checklist">Implementation checklist &rarr;</a>
+      </div>
+      <div>
+        <h3>Marketplaces</h3>
+        <p>Validate registrar-signed attestations per the specification, or integrate the DomainAttest Hub once and gain coverage of every connected registrar, current and future.</p>
+        <a href="https://github.com/domainattest/spec/blob/main/SPEC.md#3-protocol-flow-direct-mode">Protocol flow &rarr;</a>
+      </div>
+      <div>
+        <h3>Live implementations</h3>
+        <p>Atom operates the reference implementation (registrar and marketplace) and the DomainAttest Hub. Add yours by pull request.</p>
+        <a href="https://github.com/domainattest/spec/blob/main/IMPLEMENTATIONS.md">IMPLEMENTATIONS.md &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>Frequently asked questions</h2>
+    <div class="faq">
+      <h3>Why not just keep using DNS?</h3>
+      <p>DNS verification proves control of a zone file at one moment in the past. It is slow, error-prone, passes under hijacked DNS, and goes stale silently. And for actively listed domains it often cannot run at all without collateral damage: most serious listings point their name servers at a marketplace&rsquo;s landers, so a TXT record added at the registrar is invisible; verifying with a second marketplace means re-delegating, waiting, verifying, re-delegating back, and waiting again, with the lander dark the whole time. The registrar&rsquo;s own records are the source of truth; DNS was only ever a proxy for them.</p>
+      <h3>Is this a new identity system?</h3>
+      <p>No. It is a profile of OAuth 2.0 with signed tokens, the same pattern behind &ldquo;sign in with Google,&rdquo; applied to a question registrars can already answer.</p>
+      <h3>What if a seller&rsquo;s registrar does not support it?</h3>
+      <p>DNS verification still works as a fallback. DomainAttest adds a fast path; it does not remove the old one. Coverage grows registrar by registrar.</p>
+      <h3>Is this only for domain marketplaces?</h3>
+      <p>No. Nothing in the attestation format or flow is specific to marketplaces; the specification deliberately calls the consumer a <em>relying party</em>. Any service that verifies domain control today through a TXT-record challenge, from SaaS onboarding to email and ad-platform setup, can consume attestations the same way. Marketplaces are where the pain is sharpest, so that is where the protocol starts.</p>
+    </div>
+  </div>
+</section>
+
+<div class="closer">
+  <div class="wrap">
+    <p class="big">The registrar already knows who owns the domain. Now there is a protocol that lets them say so.</p>
+    <p>DomainAttest standardizes exactly one commodity layer, proving who owns a domain, so marketplaces can stop rebuilding the same verification system and keep competing on everything else.</p>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>DomainAttest is an open specification licensed under CC BY 4.0.</div>
+    <div>Created by <a href="https://www.atom.com">Atom</a> &middot; governed on <a href="https://github.com/domainattest/spec">GitHub</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
